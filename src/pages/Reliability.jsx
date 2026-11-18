@@ -1,3 +1,4 @@
+import { useWalkthrough } from '../walkthrough/context.jsx';
 import { Link } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { components, num } from '../analytics.mjs';
@@ -22,9 +23,10 @@ function ReliabilityCase({ row, discipline }) {
   const reference = rankings[discipline].slice(0, 10);
   return <>
     <div className="grid-2 reliability-case">
-      <Panel title={<PlayerName row={row} discipline={discipline} showId />}
+      <Panel tourTarget="reliability-case" title={<PlayerName row={row} discipline={discipline} showId />}
         action={<Pill tone={row.rank ? 'green' : 'amber'}>{row.rank ? 'D.1 #' + row.rank + ' · Tier ' + row.tier : 'Outside D.1 gate'}</Pill>}>
         <div className="metrics-grid">
+          <Metric label="Pressure attempts" value={count(row.p_pressure_n)} detail="Supported primary attempts" />
           <Metric label="Best match removed" value={signed(row.p_best_removed_pressure_quality)} detail="Raw primary runs / 100 attempts" />
           <Metric label="Effective matches" value={fixed(row.p_pressure_effective_matches)} detail={count(row.p_pressure_matches) + ' independent'} />
           <Metric label="Positive matches" value={percent(row.p_consistency_positive_frequency)} detail={count(row.p_consistency_matches) + ' qualifying matches'} />
@@ -56,6 +58,7 @@ function ReliabilityCase({ row, discipline }) {
 }
 
 export default function Reliability() {
+  const { highlight } = useWalkthrough();
   const [discipline, setDiscipline] = useDiscipline();
   const [params, patch] = useParamsState();
   const { finalists, registry } = useSnapshot();
@@ -74,13 +77,13 @@ export default function Reliability() {
         <section className="reliability-distribution">
           <SectionHead title="Distribution of match evidence" description="Each point represents an organiser ID with a stored value on both axes." />
           <div className="grid-2 reliability-field">
-            <Panel title={view.label}>
+            <Panel tourTarget="reliability-distribution" title={view.label}>
               <div className="controls">
                 <Select label="Measure pair" value={view.value} options={views} onChange={chart => patch({ chart })} />
                 <Select label="Population" value={params.get('cohort') || 'all'} onChange={cohort => patch({ cohort })}
                   options={[{ value: 'all', label: 'All observed candidates' }, { value: 'eligible', label: 'D.1 eligible' }]} />
               </div>
-              <Scatter rows={plotted} discipline={discipline} x={view.x} y={view.y} xLabel={view.xl} yLabel={view.yl} xUnit={view.xUnit} yUnit={view.yUnit} />
+              <Scatter selectedPid={highlight === "selected-player" ? row.pid : undefined} rows={plotted} discipline={discipline} x={view.x} y={view.y} xLabel={view.xl} yLabel={view.yl} xUnit={view.xUnit} yUnit={view.yUnit} />
             </Panel>
             <Panel title="Match repetition by finalist" subtitle="Independent and effective primary pressure matches">
               <PlayerBars rows={finalists[discipline]} discipline={discipline} label="Independent and effective primary pressure matches" unit="matches"

@@ -27,9 +27,9 @@ function ChartSurface({ height, ...props }) {
   </Suspense>;
 }
 
-export function Chart({ height = 290, label, option, onClick }) {
+export function Chart({ height = 290, label, option, onClick, highlighted }) {
   const [focused, setFocused] = useState(false);
-  return <div className="chart-instrument">
+  return <div className="chart-instrument" data-highlighted-mark={highlighted}>
     <button type="button" className="chart-focus" title="Expand chart" aria-label={'Expand chart: ' + label}
       onClick={() => setFocused(true)}><Maximize2 size={14} aria-hidden="true" /></button>
     <ChartSurface height={height} label={label} option={option} onClick={onClick} />
@@ -40,11 +40,12 @@ export function Chart({ height = 290, label, option, onClick }) {
   </div>;
 }
 
-export function GroupBars({ rows, fields, unit, label, onClick, height, ratio = false }) {
+export function GroupBars({ rows, fields, unit, label, onClick, height, ratio = false, highlightField }) {
   const renderable = rows.filter(row => fields.some(field => num(row[field.key]) !== null));
   if (!renderable.length) return <Empty title="No plottable estimates for this selection" />;
   const chartData = renderable.map(row => row.name ?? row.player_name);
   return <Chart
+    highlighted={fields.find(field => field.key === highlightField)?.label}
     height={height || Math.max(250, renderable.length * (fields.length > 2 ? 62 : 42) + 76)}
     label={label}
     onClick={event => onClick?.(renderable[event.dataIndex])}
@@ -57,21 +58,23 @@ export function GroupBars({ rows, fields, unit, label, onClick, height, ratio = 
       yAxis: { ...axis, type: 'category', inverse: true, data: chartData, axisLabel: { ...axis.axisLabel, width: 96, overflow: 'truncate' } },
       series: fields.map(field => ({ name: field.label, type: 'bar', stack: ratio ? 'coverage' : undefined, barMaxWidth: 15,
         itemStyle: { color: field.color, borderRadius: ratio ? 0 : 2 },
-        data: renderable.map(row => ({ value: num(row[field.key]), pid: row.pid })) })),
+        data: renderable.map(row => ({ value: num(row[field.key]), pid: row.pid,
+          itemStyle: field.key === highlightField ? { borderColor: '#fff3fc', borderWidth: 1.5, shadowBlur: 8, shadowColor: field.color }
+            : highlightField ? { opacity: .65 } : undefined })) })),
     }} />;
 }
 
-export function PlayerBars({ rows, discipline, fields, label, height, unit = 'runs / 100 attempts' }) {
+export function PlayerBars({ rows, discipline, fields, label, height, highlightField, unit = 'runs / 100 attempts' }) {
   const navigate = useNavigate();
-  return <GroupBars rows={rows} fields={fields} unit={unit} label={label} height={height}
+  return <GroupBars rows={rows} fields={fields} unit={unit} label={label} height={height} highlightField={highlightField}
     onClick={row => { if (row?.pid) navigate(playerLink(row.pid, discipline)); }} />;
 }
 
-export function Scatter({ rows, discipline, x, y, xLabel, yLabel, xUnit, yUnit, height = 300 }) {
+export function Scatter({ rows, discipline, x, y, xLabel, yLabel, xUnit, yUnit, height = 300, selectedPid }) {
   const navigate = useNavigate();
   const renderable = rows.filter(row => num(row[x]) !== null && num(row[y]) !== null);
   if (!renderable.length) return <Empty title="No paired estimates" />;
-  return <Chart label={yLabel + ' versus ' + xLabel} height={height} onClick={event => {
+  return <Chart highlighted={renderable.find(row => row.pid === selectedPid)?.player_name} label={yLabel + ' versus ' + xLabel} height={height} onClick={event => {
     if (event.data?.pid) navigate(playerLink(event.data.pid, discipline));
   }} option={{
     grid: { left: 5, right: 20, top: 17, bottom: 13, outerBoundsMode: 'same', outerBoundsContain: 'all' },
@@ -82,7 +85,9 @@ export function Scatter({ rows, discipline, x, y, xLabel, yLabel, xUnit, yUnit, 
     series: [{ type: 'scatter', symbolSize: renderable.length > 80 ? 7 : 11,
       itemStyle: { color: palette[discipline], opacity: .78, borderColor: palette.text, borderWidth: .5 },
       emphasis: { scale: 1.45 },
-      data: renderable.map(row => ({ value: [num(row[x]), num(row[y])], name: row.player_name, pid: row.pid })),
+      data: renderable.map(row => ({ value: [num(row[x]), num(row[y])], name: row.player_name, pid: row.pid,
+        ...(row.pid === selectedPid ? { symbolSize: 17, itemStyle: { opacity: 1, color: palette.mint, borderColor: '#fff', borderWidth: 2 },
+          label: { show: true, position: 'top', formatter: '{b}', color: palette.text, backgroundColor: '#171624', padding: 3 } } : {}) })),
       markLine: { symbol: 'none', silent: true, lineStyle: { color: '#59627e', type: 'dashed' }, label: { show: false },
         data: [...(renderable.some(row => num(row[x]) <= 0) ? [{ xAxis: 0 }] : []), ...(renderable.some(row => num(row[y]) <= 0) ? [{ yAxis: 0 }] : [])] },
     }],

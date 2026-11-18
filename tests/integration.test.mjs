@@ -99,3 +99,41 @@ test('Experimental policy results and the official reference remain separate', a
   assert.equal(p0.length, 183);
   assert.ok(replays.some(row => row.policy === 'P3' && row.evaluation_year === '2026'));
 });
+
+test('Walkthrough scenarios reconcile with the historical reference and frozen evidence', async () => {
+  const { findStep, steps } = await import('../src/walkthrough/chapters.mjs');
+  const demo = id => steps[findStep(id)].params;
+  const { domain, date } = demo('readout');
+  const [{ reference }, { examples }, batting, bowling] = await Promise.all([
+    request('/pressure?' + new URLSearchParams({ domain, date })), request('/research/methods'),
+    request('/research/batting'), request('/research/bowling'),
+  ]);
+  assert.ok(reference.latest < date);
+  const labels = ['readout', 'ceiling'].map(id => pressureState(demo(id), {
+    ...reference.duration[6], mean: reference.mean, objective: reference.objective,
+  }));
+  assert.deepEqual(labels.map(label => [label.batting, label.bowling, label.B, label.demand, label.pace]),
+    [['Pressure', 'Pressure', 6, 12, 2], ['Ordinary', 'Ordinary', 6, 60, 10]]);
+  assert.deepEqual([reference.duration[6].median, reference.duration[6].upper, labels[0].urgency].map(value => value.toFixed(2)),
+    ['1.92', '4.62', '1.04']);
+
+  const matchExample = examples.find(row => row.state === demo('ordinary-four').example);
+  const original = await request('/delivery/' + demo('source-delivery').row);
+  assert.equal(original.bat, matchExample.state);
+  for (const row of examples) {
+    assert.equal(Number(row.Y), 4);
+    assert.ok(Math.abs(Number(row.Y) - Number(row.expected) - Number(row.residual)) < 1e-12);
+  }
+  const rates = (pool, id) => demo(id).ids.split(',').map(pid => pool.find(row => row.pid === Number(pid)))
+    .map(row => [row.p_pressure_quality, row.p_pressure_shrunk].map(value => Number(value).toFixed(2)));
+  assert.deepEqual(rates(batting, 'batting-reveal'), [['47.25', '31.36'], ['49.60', '18.24']]);
+  assert.deepEqual(rates(bowling, 'bowling-reveal'), [['40.60', '19.91'], ['42.89', '11.87']]);
+  const uplift = bowling.filter(row => demo('ordinary-baseline').ids.split(',').includes(String(row.pid)));
+  assert.equal(uplift.length, 2);
+  assert.ok(uplift.every(row => Number(row.p_pressure_quality) > 0 && Number(row.p_pressure_uplift) < 0));
+  const coetzee = bowling.find(row => row.pid === 6628);
+  assert.deepEqual([Number(coetzee.p_pressure_n), Number(coetzee.p_pressure_matches)], [55, 7]);
+  const [mustafizur, henry] = demo('henry').ids.split(',').map(pid => bowling.find(row => row.pid === Number(pid)));
+  assert.deepEqual([mustafizur.rank, henry.rank], [10, 11]);
+  assert.equal((Number(mustafizur.p_pressure_shrunk) - Number(henry.p_pressure_shrunk)).toFixed(2), '0.24');
+});

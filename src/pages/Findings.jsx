@@ -30,7 +30,7 @@ export default function Findings() {
   return <>
     <PageHead kicker="Interpretation" title="Findings & limitations"
       description="What the organiser data allows PRISM to measure, and where the historical evidence runs out." />
-    <ol className="research-brief">{findings.map(({ icon: Icon, title, body, link, to }, index) => <li key={title}>
+    <ol className="research-brief" data-tour="research-findings">{findings.map(({ icon: Icon, title, body, link, to }, index) => <li key={title}>
       <div className="brief-index" aria-hidden="true"><span>{String(index + 1).padStart(2, '0')}</span><Icon size={18} /></div>
       <h2>{title}</h2>
       <div><p>{body}</p><TextLink to={to}>{link}</TextLink></div>

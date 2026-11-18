@@ -6,6 +6,7 @@ import { Snapshot, useApi, useDiscipline } from './data.jsx';
 import { activeRoute, CommandPalette, NavigationDock } from './navigation.jsx';
 import { ApiState, Empty } from './ui.jsx';
 import Overview from './pages/Overview.jsx';
+import { WalkthroughProvider } from './walkthrough/Walkthrough.jsx';
 
 const Rankings = lazy(() => import('./pages/Rankings.jsx'));
 const Profile = lazy(() => import('./pages/Profile.jsx'));
@@ -46,7 +47,7 @@ export default function App() {
     window.addEventListener('keydown', handle);
     return () => window.removeEventListener('keydown', handle);
   }, []);
-  return <MotionConfig reducedMotion="user">
+  return <MotionConfig reducedMotion="user"><WalkthroughProvider snapshot={result.data}>
     <a className="skip-link" href="#content">Skip to content</a>
     <div className="shell">
       <NavigationDock key={location.pathname} onSearch={() => setSearch(true)} searchReady={Boolean(result.data)} />
@@ -89,5 +90,5 @@ export default function App() {
           <Link to="/audit"><CircleHelp size={14} /> Data provenance</Link></footer>
       </div>
     </div>
-  </MotionConfig>;
+  </WalkthroughProvider></MotionConfig>;
 }

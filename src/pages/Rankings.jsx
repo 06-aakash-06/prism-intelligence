@@ -66,7 +66,7 @@ export default function Rankings() {
     <section className="ranking-stage">
       <SectionHead title="What drives the order" description="Marks open player profiles. Charts with ten rows use the first ten matching players in frozen rank order." />
       <div className="grid-2 ranking-spread">
-        <Panel title="Shrunken pressure contribution" subtitle={primaryUnit} className="ranking-signal">
+        <Panel tourTarget="ranking-order" title="Shrunken pressure contribution" subtitle={primaryUnit} className="ranking-signal">
           {display[0] && <div className="ranking-lead">
             <span className="ranking-lead-number">{String(display[0].rank).padStart(2, '0')}</span>
             <div><span className="chart-subtitle">Leading result in view</span><PlayerName row={display[0]} discipline={discipline} /></div>

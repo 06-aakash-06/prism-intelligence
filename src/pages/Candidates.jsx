@@ -67,7 +67,7 @@ function AuditView({ rows, discipline, eligible, total, complete }) {
         </div>)}</div>
       </Panel>
       <Panel className="boundary-line" title="Near the boundary" subtitle="Open a player to see both-component support and the native estimates.">
-        {matchHighlights.map(row => <div className="match-card" key={row.pid}>
+        {matchHighlights.map(row => <div className="match-card" data-tour={row.pid === 6628 ? "candidate-coetzee" : undefined} key={row.pid}>
           <PlayerName row={row} discipline={discipline} showId />
           <div className="text-right"><Pill tone={row.rank ? 'green' : 'amber'}>{row.rank ? 'Rank #' + row.rank : 'Outside gate'}</Pill>
             <small>{count(row.p_pressure_n)} attempts · {count(row.p_pressure_matches)} matches</small></div>
@@ -76,7 +76,7 @@ function AuditView({ rows, discipline, eligible, total, complete }) {
     </div>
     <section className="block">
       <SectionHead title="Eligibility sensitivity" description="Explore exact Policy A gate changes using the saved native estimates, original tiers and fixed tie-breaks. No model is refitted." />
-      <Panel className="threshold-instrument" title="Change the support requirements" subtitle="Both components and both states must meet their respective thresholds."
+      <Panel tourTarget="candidate-threshold" className="threshold-instrument" title="Change the support requirements" subtitle="Both components and both states must meet their respective thresholds."
         action={<Pill tone="amber">Exploratory ordering</Pill>}>
         <div className="controls">
           <Field label="Pressure attempts (min.)" value={params.get('minP') || 60} type="number" min={1} max={10000} onChange={minP => patch({ minP }, true)} />

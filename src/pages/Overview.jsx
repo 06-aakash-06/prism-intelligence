@@ -1,3 +1,4 @@
+import { WalkthroughEntry } from '../walkthrough/Walkthrough.jsx';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight, Binary, ChartNoAxesCombined, Database, Layers3, LockKeyhole, ScanLine, ShieldCheck, Target } from 'lucide-react';
@@ -42,7 +43,7 @@ export default function Overview() {
   return <>
     <section className="hero">
       <div className="hero-grid" aria-hidden="true"><div className="pitch"><i /><i /><i /></div></div>
-      <div className="hero-body">
+      <div className="hero-body" data-tour="tour-opening">
         <div className="eyebrow"><span className="eyebrow-rule" /> SupeRR Selector S2 <span className="low-contrast">/</span> Round 1 research</div>
         <h1>Performance<br />under <em>pressure.</em></h1>
         <p>How much did a player contribute relative to what the situation demanded? PRISM measures contextual T20 performance, ordinary form and the reliability of the match evidence.</p>
@@ -50,6 +51,7 @@ export default function Overview() {
           <Link className="button primary" to="/rankings">Explore D.1 rankings <ArrowRight size={16} /></Link>
           <Link className="button ghost" to="/methodology">See the methodology <ArrowUpRight size={15} /></Link>
         </div>
+        <WalkthroughEntry />
       </div>
       <div className="hero-scope">
         <div className="scope-label"><LockKeyhole size={13} /> Frozen reference</div>
@@ -69,7 +71,7 @@ export default function Overview() {
     <section className="block">
       <SectionHead title="The selected twenty" description={rankings.batting.length + ' eligible batters · ' + rankings.bowling.length + ' eligible bowlers · frozen order'}
         action={<Pill tone="green"><LockKeyhole size={12} /> D.1 reference</Pill>} />
-      <div className="grid-2 broadcast-order">
+      <div className="grid-2 broadcast-order" data-tour="selected-twenty">
         <RankingPreview rows={finalists.batting} discipline="batting" />
         <RankingPreview rows={finalists.bowling} discipline="bowling" />
       </div>

@@ -1,3 +1,4 @@
+import { useWalkthrough } from '../walkthrough/context.jsx';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Copy, Minus, Plus } from 'lucide-react';
@@ -16,6 +17,7 @@ const presets = [
 ];
 
 export default function Compare() {
+  const tour = useWalkthrough();
   const [discipline, setDiscipline] = useDiscipline();
   const [params, patch] = useParamsState();
   const packet = useApi('/research/' + discipline);
@@ -26,7 +28,8 @@ export default function Compare() {
   const storageKey = 'prism-comparison-' + discipline;
   const encoded = params.get('ids') ?? localStorage.getItem(storageKey) ?? defaultIds.join(',');
   const ids = [...new Set(encoded.split(',').map(Number).filter(id => registry.some(player => player.pid === id)))].slice(0, 4);
-  useEffect(() => { localStorage.setItem(storageKey, encoded); }, [storageKey, encoded]);
+  const temporary = params.has('tour');
+  useEffect(() => { if (!temporary) localStorage.setItem(storageKey, encoded); }, [storageKey, encoded, temporary]);
   const update = selection => patch({ d: discipline, ids: selection.join(',') || 'none' });
   async function copy() {
     try { await navigator.clipboard.writeText(new URL(comparisonLink(discipline, ids), location.origin).href); setCopied('Link copied'); }
@@ -76,12 +79,13 @@ export default function Compare() {
           </article>)}</div>
           {rows.length < 2 ? <Empty title="Select at least two players" detail="Use Add player or choose a suggested comparison." />
             : <div className="grid-main compare-evidence">
-              <Panel title="Raw, shrunken and best-removed quality" subtitle="Primary runs / 100 attempts">
+              <Panel tourTarget="comparison-rates" title="Raw, shrunken and best-removed quality" subtitle="Primary runs / 100 attempts">
                 <PlayerBars rows={rows} discipline={discipline} label="Raw pressure, shrunken and best removed"
+                  highlightField={{ raw: "p_pressure_quality", shrunk: "p_pressure_shrunk" }[tour.highlight]}
                   fields={[{ key: 'p_pressure_quality', color: palette.raw, label: 'Raw' },
                     { key: 'p_pressure_shrunk', color: palette[discipline], label: 'Shrunken' },
                     { key: 'p_best_removed_pressure_quality', color: palette.violet, label: 'Raw best removed' }]} />
-                {reversal && <p className="footnote">{reversal.rawLeader.player_name} leads this pair on raw pressure quality.
+                {reversal && tour.highlight !== "raw" && <p className="footnote">{reversal.rawLeader.player_name} leads this pair on raw pressure quality.
                   {' '}{reversal.shrunkenLeader.player_name} leads after shrinkage and retains {percent(reversal.shrunkenLeader.p_pressure_shrinkage_weight)}
                   {' '}of the raw rate, compared with {percent(reversal.rawLeader.p_pressure_shrinkage_weight)} for {reversal.rawLeader.player_name}.</p>}
               </Panel>
@@ -91,10 +95,23 @@ export default function Compare() {
               </Panel>
             </div>}
         </section>
+        {tour.target === 'comparison-uplift' && rows.length >= 2 && <Panel className="comparison-uplift" tourTarget="comparison-uplift"
+          title="Pressure, ordinary and native uplift" subtitle="Each rate uses runs per 100 attempts. Uplift is pressure minus ordinary.">
+          <PlayerBars rows={rows} discipline={discipline} label="Pressure quality, ordinary quality and native uplift"
+            highlightField={tour.highlight === 'uplift' ? 'p_pressure_uplift' : undefined}
+            fields={[{ key: 'p_pressure_quality', color: palette[discipline], label: 'Pressure' },
+              { key: 'p_ordinary_quality', color: palette.raw, label: 'Ordinary' },
+              { key: 'p_pressure_uplift', color: palette.violet, label: 'Native uplift' }]} />
+          <Table label="Pressure and ordinary rates and their difference" rows={rows} columns={[
+            { key: 'player_name', label: 'Player' },
+            ...[['p_pressure_quality', 'Pressure'], ['p_ordinary_quality', 'Ordinary'], ['p_pressure_uplift', 'Native uplift']]
+              .map(([key, label]) => ({ key, label, numeric: true, render: row => signed(row[key]) })),
+          ]} />
+        </Panel>}
         {rows.length >= 2 && <section className="block">
           <SectionHead title="Why the order moves" description="D.1 applies a separate uncertainty weight to each raw pressure estimate. Higher raw contribution can become lower shrunken contribution when its estimated match variance is larger." />
           <div className="grid-3 comparison-traces">
-            <Panel title="Independent and effective matches" subtitle="Primary pressure evidence">
+            <Panel tourTarget="comparison-matches" title="Independent and effective matches" subtitle="Primary pressure evidence">
               <PlayerBars rows={rows} discipline={discipline} label="Independent and effective pressure matches" unit="matches"
                 fields={[{ key: 'p_pressure_matches', color: palette.raw, label: 'Independent' },
                   { key: 'p_pressure_effective_matches', color: palette[discipline], label: 'Effective' }]} />

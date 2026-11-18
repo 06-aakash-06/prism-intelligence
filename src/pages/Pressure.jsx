@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { num, pressureState } from '../analytics.mjs';
 import { axis, Chart, palette } from '../charts.jsx';
 import { query, useApi, useParamsState } from '../data.jsx';
+import { pressurePresets } from '../pressure-presets.mjs';
 import { ScenarioSwitches, Stamp } from '../instruments.jsx';
 import { ApiState, Field, PageHead, SectionHead, Select, TextLink, Toggle, count, fixed } from '../ui.jsx';
 
@@ -15,13 +16,6 @@ const gates = {
   acceleration: ['Late batting acceleration', 'At least 60 legal balls completed and relative urgency at least 1.'],
   platform: ['Bowling platform', 'At least 60 legal balls completed, score at or above historical par, and either urgency at least 1 or at most three wickets remaining.'],
 };
-
-const simulations = [
-  { label: '12 from 6', innings: 2, S: 168, W: 3, L: 114, target: 180, prior12: 0 },
-  { label: '60 from 6', innings: 2, S: 120, W: 3, L: 114, target: 180, prior12: 0 },
-  { label: 'Last wicket', innings: 2, S: 178, W: 9, L: 96, target: 180, prior12: 0 },
-  { label: 'Early collapse', innings: 1, S: 45, W: 4, L: 36, target: null, prior12: 2 },
-];
 
 function PressureReadout({ label, value, note, className = '' }) {
   return <div className={'pressure-readout ' + className}><dt>{label}</dt><dd>{value}</dd>{note && <dd className="readout-note">{note}</dd>}</div>;
@@ -43,7 +37,7 @@ function PaceGauge({ pace, median, upper }) {
 
 function Classification({ state, classified, reference, duration }) {
   const shared = classified.batting === classified.bowling;
-  return <section className="classification-instrument" id="classification-readout" tabIndex={-1} aria-labelledby="pressure-classification">
+  return <section className="classification-instrument" data-tour={reference && duration ? "pressure-readout" : undefined} id="classification-readout" tabIndex={-1} aria-labelledby="pressure-classification">
     <div className="classification-etching" aria-hidden="true" />
     <div className="instrument-caption"><h2 id="pressure-classification">Frozen V2 classification</h2><Crosshair size={16} aria-hidden="true" /></div>
     <div className={'classification-outcomes ' + (shared ? 'shared' : 'split')} aria-live="polite" aria-atomic="true">
@@ -83,7 +77,7 @@ function RuleCanvas({ state, classified, reference, duration }) {
   const first = state.innings === 1;
   const surfaces = reference ? Object.entries(reference.duration).map(([balls, ref]) => [Number(balls), ref.median, ref.upper]) : [];
   const renderGate = gate => <Gate key={gate} gate={gate} passed={classified.gates[gate]} />;
-  return <section className="block pressure-diagnostics">
+  return <section className="block pressure-diagnostics" data-tour={reference ? "pressure-gates" : undefined}>
     <SectionHead title="Pressure-rule diagnostic" description="Follow the gates from scoring plausibility to the innings-specific triggers." />
     <div className="diagnostic-composition">
       <div className="logic-trace" aria-label="Which gates passed?">
@@ -126,9 +120,9 @@ function Simulator({ dates }) {
   const choices = dates.filter(row => row.domain === domain);
   const date = params.get('date') || choices.findLast(row => row.supported)?.date || '';
   const result = useApi(date ? '/pressure?' + query({ domain, date }) : null);
-  const state = Object.fromEntries(Object.entries(simulations[0]).filter(([key]) => key !== 'label')
+  const state = Object.fromEntries(Object.entries(pressurePresets[0]).filter(([key]) => key !== 'label')
     .map(([key, value]) => [key, params.has(key) ? params.get(key) === 'unset' ? null : num(params.get(key)) : value]));
-  const selected = simulations.find(({ label: _label, ...preset }) => Object.entries(preset)
+  const selected = pressurePresets.find(({ label: _label, ...preset }) => Object.entries(preset)
     .every(([key, value]) => key === 'prior12' && state.innings === 2 || state[key] === value))?.label;
   const apply = ({ label: _label, ...preset }) => patch({ ...preset, target: preset.target ?? 'unset' });
   const change = (key, value) => patch({ [key]: value || 'unset' }, true);
@@ -142,7 +136,7 @@ function Simulator({ dates }) {
     : 'Bat ' + classified.batting + ' / Bowl ' + classified.bowling);
   return <>
     <div className="lab-composition">
-      <section className="state-instrument" aria-labelledby="match-state">
+      <section className="state-instrument" data-tour="pressure-controls" aria-labelledby="match-state">
         <div className="instrument-caption"><h2 id="match-state">Match-state controls</h2><SlidersHorizontal size={15} aria-hidden="true" />
           {outcome && <a href="#classification-readout" className={'mobile-outcome ' + classified.batting.toLowerCase()}
             aria-label={'View classification: ' + outcome}>{outcome}<ArrowDownRight size={12} aria-hidden="true" /></a>}
@@ -173,8 +167,8 @@ function Simulator({ dates }) {
           </div>
           <Field label="Legal balls completed" type="number" value={state.L} min={0} max={120} onChange={value => change('L', value)} />
         </div>
-        <div className="preset-block"><div className="instrument-caption"><span>Scenario presets</span><ArrowDownRight size={14} aria-hidden="true" /></div>
-          <ScenarioSwitches scenarios={simulations} selected={selected} onChange={apply} label="Scenario presets" /></div>
+        <div className="preset-block" data-tour-mobile="pressure-controls"><div className="instrument-caption"><span>Scenario presets</span><ArrowDownRight size={14} aria-hidden="true" /></div>
+          <ScenarioSwitches scenarios={pressurePresets} selected={selected} onChange={apply} label="Scenario presets" /></div>
         <p className="footnote">The simulator assumes a standard 120-ball innings. The selected date limits the reference to earlier matches.</p>
       </section>
       <ApiState result={result}>{() => <>

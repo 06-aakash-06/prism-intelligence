@@ -50,13 +50,14 @@ export function useDiscipline() {
   const [params, patch] = useParamsState();
   const stored = localStorage.getItem('prism-discipline');
   const explicit = params.get('d');
+  const walkthrough = params.has('tour');
   useEffect(() => {
-    if (explicit === 'batting' || explicit === 'bowling') localStorage.setItem('prism-discipline', explicit);
-  }, [explicit]);
+    if (!walkthrough && (explicit === 'batting' || explicit === 'bowling')) localStorage.setItem('prism-discipline', explicit);
+  }, [explicit, walkthrough]);
   const value = explicit || stored;
   const discipline = value === 'bowling' ? 'bowling' : 'batting';
   return [discipline, (next, changes = {}) => {
-    localStorage.setItem('prism-discipline', next);
+    if (!walkthrough) localStorage.setItem('prism-discipline', next);
     patch({ d: next, ...changes });
   }];
 }

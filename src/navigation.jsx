@@ -1,8 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, ArrowLeftRight, ArrowUpRight, ChartNoAxesColumnIncreasing, ChevronRight, ChevronsRight, Database, FileCheck2,
+import { Activity, ArrowLeftRight, ArrowUpRight, ChartNoAxesColumnIncreasing, ChevronRight, ChevronsRight, Compass, Database, FileCheck2,
   FlaskConical, GitCompareArrows, Layers3, LayoutGrid, Search, ShieldCheck, Target, UserRound, UsersRound } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useWalkthrough } from './walkthrough/context.jsx';
 import { playerLink } from './data.jsx';
 import { AnalysisDialog, Stamp } from './instruments.jsx';
 
@@ -107,6 +108,7 @@ export function NavigationDock({ onSearch, searchReady }) {
 
 export function CommandPalette({ snapshot, discipline, onClose }) {
   const navigate = useNavigate();
+  const tour = useWalkthrough();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
   const list = useId();
@@ -115,11 +117,13 @@ export function CommandPalette({ snapshot, discipline, onClose }) {
   const matches = term => search.split(/\s+/).every(token => String(term).toLowerCase().includes(token));
   const pages = routes.filter(route => matches(route.name + ' ' + route.group));
   const players = search ? snapshot.registry.filter(player => [player.pid, player.name, ...(player.aliases || [])].some(matches)).slice(0, 8) : [];
-  const entries = [...pages, ...players];
+  const tourEntry = { name: tour.active ? 'Restart PRISM walkthrough' : 'Take the PRISM tour', group: 'Guided research', icon: Compass, action: tour.start };
+  const entries = [...(matches(tourEntry.name + ' take walkthrough tour explore PRISM guided research') ? [tourEntry] : []), ...pages, ...players];
   const index = Math.min(selected, Math.max(0, entries.length - 1));
 
   function follow(entry) {
     if (!entry) return;
+    if (entry.action) { onClose(); entry.action(); return; }
     let destination = entry.path;
     if (!destination) {
       const alternate = discipline === 'batting' ? 'bowling' : 'batting';
@@ -152,11 +156,11 @@ export function CommandPalette({ snapshot, discipline, onClose }) {
       {entries.map((entry, i) => {
         const Icon = entry.icon || UserRound;
         return <button type="button" role="option" aria-selected={i === index} id={list + '-' + i}
-          tabIndex={-1} key={entry.path || entry.pid} onClick={() => follow(entry)}>
+          tabIndex={-1} key={entry.path || entry.pid || entry.name} onClick={() => follow(entry)}>
           <Icon size={17} aria-hidden="true" /><strong>{entry.name}</strong><span>{entry.group || 'ID ' + entry.pid}</span><ArrowUpRight size={14} aria-hidden="true" />
         </button>;
       })}
-      {!entries.length && <p role="status">No matching pages or players.</p>}
+      {!entries.length && <p role="status">No matching pages, players or actions.</p>}
     </div>
     <div className="command-hints"><span><kbd>↑</kbd> <kbd>↓</kbd> Select</span><span><kbd>↵</kbd> Open</span></div>
   </AnalysisDialog>;

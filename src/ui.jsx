@@ -24,8 +24,8 @@ export function SectionHead({ title, description, action }) {
   return <div className="section-head"><div><h2>{title}</h2>{description && <p>{description}</p>}</div>{action}</div>;
 }
 
-export function Panel({ title, subtitle, children, action, className = '' }) {
-  return <section className={'panel ' + className}>
+export function Panel({ title, subtitle, children, action, className = '', tourTarget }) {
+  return <section className={'panel ' + className} data-tour={tourTarget}>
     {(title || action) && <div className="panel-head"><div>{title && <h3>{title}</h3>}{subtitle && <p>{subtitle}</p>}</div>{action}</div>}
     {children}
   </section>;
@@ -55,7 +55,7 @@ export function TextLink({ to, children, primary = false }) {
 
 export function Select({ label, value, options, onChange }) {
   return <label className="field"><span>{label}</span><div className="select-wrap">
-    <select value={value ?? ''} onChange={event => onChange(event.target.value)}>
+    <select aria-label={label} value={value ?? ''} onChange={event => onChange(event.target.value)}>
       {options.map(option => typeof option === 'string'
         ? <option key={option} value={option}>{option}</option>
         : <option key={option.value} value={option.value}>{option.label}</option>)}

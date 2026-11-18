@@ -5,6 +5,7 @@ import 'katex/dist/katex.min.css';
 import { BookOpen, FileDown } from 'lucide-react';
 import { componentNames } from '../analytics.mjs';
 import { GroupBars, palette } from '../charts.jsx';
+import { useWalkthrough } from '../walkthrough/context.jsx';
 import { matchLink, useApi, useParamsState } from '../data.jsx';
 import { metric } from '../player-evidence.jsx';
 import { ApiState, PageHead, Panel, SectionHead, Table, TextLink, Toggle, count, fixed, signed } from '../ui.jsx';
@@ -17,7 +18,7 @@ function MathLine({ formula }) {
 function Method({ id, title, children }) {
   const { hash } = useLocation();
   const separator = title.indexOf('. ');
-  return <details id={id} className="disclosure scroll-target notebook-stage" open={hash === '#' + id ? true : undefined}>
+  return <details id={id} data-tour={id === "components" ? id : undefined} className="disclosure scroll-target notebook-stage" open={hash === '#' + id ? true : undefined}>
     <summary><span className="notebook-number" aria-hidden="true">{title.slice(0, separator).padStart(2, '0')}</span>
       <span>{title.slice(separator + 2)}</span></summary><div className="detail-body">{children}</div>
   </details>;
@@ -96,6 +97,7 @@ const methodology = [
 ];
 
 export default function Methods() {
+  const { highlight } = useWalkthrough();
   const result = useApi('/research/methods');
   const [params, patch] = useParamsState();
   const { hash } = useLocation();
@@ -112,12 +114,12 @@ export default function Methods() {
       const state = params.get('example') === 'ordinary' ? 'ordinary' : 'pressure';
       const example = data.examples.find(row => row.state === state);
       return <div className="grid-main notebook-example">
-        <Panel title="Two actual Andre Russell fours" subtitle="Match 20202 · same observed runs, different expected runs">
+        <Panel tourTarget={example ? "russell-example" : undefined} title="Two actual Andre Russell fours" subtitle="Match 20202 · same observed runs, different expected runs">
           <div className="mb-2"><Toggle value={state} options={[{ value: 'pressure', label: 'Pressure four' }, { value: 'ordinary', label: 'Ordinary four' }]}
             onChange={example => patch({ example })} label="Observed and expected example" /></div>
           {example && <>
             <GroupBars rows={[{ ...example, name: 'Outcome' }]} fields={[{ key: 'Y', label: 'Observed', color: palette.batting },
-              { key: 'expected', label: 'Expected', color: palette.raw }]} unit="runs" label="Russell observed runs and frozen expectation" height={129} />
+              { key: 'expected', label: 'Expected', color: palette.raw }]} highlightField={highlight === 'observed' ? 'Y' : highlight} unit="runs" label="Russell observed runs and frozen expectation" height={129} />
             <p className="mono">{fixed(example.Y)} − {fixed(example.expected)} = <strong className="positive">{signed(example.residual)} runs</strong></p>
             <TextLink to={matchLink(example.match_id, { player: 1318, d: 'batting', component: example.component, row: example.source_row })}>Inspect original CSV row #{example.source_row}</TextLink>
           </>}

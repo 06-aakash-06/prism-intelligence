@@ -139,7 +139,7 @@ function DeliveryInspector({ row, match, selectedComponent, player }) {
           ].map(([name, pass]) => <Pill key={name} tone={pass ? 'green' : ''}>{name} · {pass ? 'Pass' : 'Fail'}</Pill>)}</div>
           <p className="footnote">Historical reference latest {label?.training_latest || '—'} · Relative urgency {fixed(label?.urgency)} · Prior 12-legal-ball wickets {count(label?.prior12_wickets)}.</p>
         </div>}
-      <div className="detail-stack mt-3">
+      <div className="detail-stack mt-3" data-tour={events.length ? "event-outcome" : undefined}>
         {events.map(event => <details key={event.component} className="disclosure" open={events.length === 1 ? true : undefined}>
           <summary>{componentNames[event.component]} · {signed(event.residual)} {eventUnit(event.component)}</summary>
           <div className="detail-body">

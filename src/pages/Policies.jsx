@@ -52,7 +52,7 @@ function RankingPolicyView({ data, discipline }) {
       <Panel title="P0 · Original D.1" subtitle="Frozen reference" action={<Pill tone="green">Retained</Pill>}>
         <Table label="Original P0 selection" rows={reference} columns={topColumns('P0')} />
       </Panel>
-      <Panel title={scenario + ' · ' + labels[scenario]} subtitle={descriptions[scenario]}
+      <Panel tourTarget="policy-orders" title={scenario + ' · ' + labels[scenario]} subtitle={descriptions[scenario]}
         action={<Pill tone="amber">Experimental</Pill>}>
         <div className="controls">
           <Select label="Policy" value={scenario} options={policies.slice(1).map(value => ({ value, label: value + ' · ' + labels[value] }))}
@@ -186,7 +186,7 @@ export default function Policies() {
     <ApiState result={result}>{data => {
       const core = data.paired.filter(row => row.policy === 'P3' && ['pressure', 'uplift'].includes(row.metric));
       return <>
-        <Panel className="policy-replay" title="P3 versus D.1 in retrospective replay" subtitle="16 exploratory, unadjusted pressure and uplift contrasts across both disciplines and years">
+        <Panel tourTarget="policy-replay" className="policy-replay" title="P3 versus D.1 in retrospective replay" subtitle="16 exploratory, unadjusted pressure and uplift contrasts across both disciplines and years">
           <div className="verdict-bar" role="img" aria-label={verdicts.map(([label]) => (data.p3Counts[label] || 0) + ' ' + label).join(', ')}>
             {verdicts.map(([label, color]) => <div key={label} style={{ width: ((data.p3Counts[label] || 0) / core.length * 100) + '%', background: color }} />)}
           </div>
