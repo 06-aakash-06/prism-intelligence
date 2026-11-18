@@ -28,6 +28,12 @@ The default address is `http://127.0.0.1:4173`. Set `PORT` to change it. The pro
 | `PORT` | Production server port, default `4173`. |
 | `HOST` | Production bind address, default `127.0.0.1`. |
 
+## Protected Vercel deployment
+
+Run `npm run data` from a checkout with the authorised research exports, then run `npm run stage:vercel` to build the frontend and assemble `.vercel/output`. The generated Node.js function serves the existing API using the compressed evidence index and report. The research exports and generated deployment output stay outside Git.
+
+Link to the intended Vercel project and confirm that Vercel Authentication protects all its deployments. Then run `vercel deploy --prebuilt --prod` from this app directory.
+
 ## Verify
 
 ```sh

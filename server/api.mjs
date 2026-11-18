@@ -13,7 +13,7 @@ const positiveId = value => /^\d{1,9}$/.test(value ?? '') && Number(value) > 0 ?
 const safeString = value => typeof value === 'string' ? value.slice(0, 120) : '';
 const pageSize = 25;
 
-export function createApi(database = databasePath) {
+export function createApi(database = databasePath, reportPath = resolve(researchRoot, sources.report[0])) {
   const db = new DatabaseSync(database, { readOnly: true });
   const api = express.Router();
   const packetQuery = db.prepare('SELECT payload FROM packets WHERE key = ?');
@@ -30,7 +30,7 @@ export function createApi(database = databasePath) {
     res.type('json').send(packetQuery.get(key).payload);
   });
   api.get('/methodology-report', (_req, res) => {
-    res.type('pdf').send(readFileSync(resolve(researchRoot, sources.report[0])));
+    res.type('pdf').send(readFileSync(reportPath));
   });
   api.get('/pressure', (req, res) => {
     const dates = db.prepare('SELECT domain, date, payload != \'null\' AS supported FROM references_v2 ORDER BY date').all();
